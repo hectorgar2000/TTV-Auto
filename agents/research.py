@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-from langchain_anthropic import ChatAnthropic
+from langchain_ollama import ChatOllama
 from langchain_community.tools import DuckDuckGoSearchResults
 from langchain_core.messages import HumanMessage
 from langgraph.prebuilt import create_react_agent
@@ -35,10 +35,11 @@ MAX_RETRIES = 2
 
 
 def create_research_node(config: Config):
-    llm = ChatAnthropic(
+    llm = ChatOllama(
         model=config.llm_model,
         temperature=config.llm_temperature,
-        max_tokens=4096,
+        base_url=config.ollama_base_url,
+        num_predict=4096,
     )
     search_tool = DuckDuckGoSearchResults(
         max_results=5,

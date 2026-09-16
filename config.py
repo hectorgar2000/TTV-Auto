@@ -10,9 +10,10 @@ import yaml
 
 @dataclass
 class Config:
-    # LLM (desacoplado: cambiar modelo/proveedor solo aqui)
-    llm_model: str = "claude-sonnet-4-20250514"
+    # LLM — Ollama (local, gratuito)
+    llm_model: str = "llama3.1"
     llm_temperature: float = 0.7
+    ollama_base_url: str = "http://localhost:11434"
 
     # TTS: "f5" (default, GPU) | "edge" (gratis, online) | "xtts" | "piper"
     tts_engine: str = "f5"
@@ -53,6 +54,7 @@ class Config:
         env_map: dict[str, str | tuple[str, type]] = {
             "LLM_MODEL": "llm_model",
             "LLM_TEMPERATURE": ("llm_temperature", float),
+            "OLLAMA_BASE_URL": "ollama_base_url",
             "TTS_ENGINE": "tts_engine",
             "F5_REF_AUDIO": "f5_ref_audio",
             "F5_REF_TEXT": "f5_ref_text",

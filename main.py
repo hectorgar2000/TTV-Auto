@@ -61,10 +61,15 @@ def main():
     logger.info("Configuración cargada: LLM=%s, TTS=%s, SD=%s",
                 config.llm_model, config.tts_engine, config.sd_model)
 
-    if not _check_api_key():
+    if not _check_ollama(config):
         logger.error(
-            "ANTHROPIC_API_KEY no configurada. "
-            "Exporta la variable de entorno antes de ejecutar."
+            "Ollama no está accesible en %s. "
+            "Asegúrate de que Ollama está instalado y ejecutándose:\n"
+            "  1. Descarga: https://ollama.com/download\n"
+            "  2. Ejecuta: ollama serve\n"
+            "  3. Descarga modelo: ollama pull %s",
+            config.ollama_base_url,
+            config.llm_model,
         )
         sys.exit(1)
 
@@ -160,9 +165,31 @@ def _setup_logging(verbose: bool):
     logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 
-def _check_api_key() -> bool:
-    import os
-    return bool(os.getenv("ANTHROPIC_API_KEY"))
+def _check_ollama(config) -> bool:
+    """Check that Ollama is running and the model is available."""
+    import urllib.request
+    import urllib.error
+    try:
+        url = f"{config.ollama_base_url}/api/tags"
+        req = urllib.request.Request(url, method="GET")
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            import json
+            data = json.loads(resp.read())
+            models = [m["name"] for m in data.get("models", [])]
+            base_name = config.llm_model.split(":")[0]
+            found = any(base_name in m for m in models)
+            if not found:
+                logging.getLogger("main").warning(
+                    "Modelo '%s' no encontrado en Ollama. "
+                    "Modelos disponibles: %s. "
+                    "Ejecuta: ollama pull %s",
+                    config.llm_model,
+                    ", ".join(models) or "(ninguno)",
+                    config.llm_model,
+                )
+            return True
+    except (urllib.error.URLError, OSError):
+        return False
 
 
 def _slugify(text: str) -> str:

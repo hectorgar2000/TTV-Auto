@@ -6,7 +6,7 @@ import logging
 import re
 from typing import TYPE_CHECKING
 
-from langchain_anthropic import ChatAnthropic
+from langchain_ollama import ChatOllama
 from langchain_core.messages import HumanMessage, SystemMessage
 
 if TYPE_CHECKING:
@@ -47,10 +47,11 @@ MAX_RETRIES = 2
 
 
 def create_metadata_node(config: Config):
-    llm = ChatAnthropic(
+    llm = ChatOllama(
         model=config.llm_model,
         temperature=0.7,
-        max_tokens=2048,
+        base_url=config.ollama_base_url,
+        num_predict=2048,
     )
 
     def metadata_node(state: VideoState) -> dict:
