@@ -11,8 +11,8 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-MAX_CHARS_PER_LINE = 42
-MAX_SUBTITLE_DURATION = 6.0  # seconds
+MAX_CHARS_PER_LINE = 35
+MAX_SUBTITLE_DURATION = 4.5  # seconds
 
 
 def generate_subtitles_for_scene(
@@ -89,17 +89,19 @@ def generate_srt_file(
 
 
 def _split_into_phrases(text: str) -> list[str]:
-    """Split text at sentence boundaries, keeping phrases ≤ ~15 words."""
-    sentences = re.split(r"(?<=[.!?…])\s+", text.strip())
+    """Split text into short subtitle phrases (~8 words max)."""
+    sentences = re.split(r"(?<=[.!?…;:])\s+", text.strip())
     phrases = []
     for sentence in sentences:
-        words = sentence.split()
-        if len(words) <= 15:
-            phrases.append(sentence)
-        else:
-            for i in range(0, len(words), 12):
-                chunk = " ".join(words[i : i + 12])
-                phrases.append(chunk)
+        parts = re.split(r"(?<=,)\s+", sentence)
+        for part in parts:
+            words = part.split()
+            if len(words) <= 8:
+                phrases.append(part)
+            else:
+                for i in range(0, len(words), 7):
+                    chunk = " ".join(words[i : i + 7])
+                    phrases.append(chunk)
     return [p for p in phrases if p.strip()]
 
 

@@ -15,31 +15,31 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-SYSTEM_PROMPT = """\
+SYSTEM_PROMPT_TEMPLATE = """\
 Eres un director artístico para vídeos de YouTube sobre lore de fantasía.
 Tu trabajo es, para cada escena del guion, generar:
 
-1. Un prompt de imagen EN INGLÉS para Stable Diffusion, estilo:
-   "epic fantasy illustration, [descripción detallada], dramatic lighting,
-    high detail, cinematic composition, 16:9 aspect ratio"
-   Sé específico con vestimenta, paisajes, colores y atmósfera.
+1. Un prompt de imagen EN INGLÉS para Stable Diffusion.
+   IMPORTANTE: Todos los prompts DEBEN empezar con este prefijo de estilo exacto:
+   "{style_prefix}, "
+   Después del prefijo, describe la escena concreta: personajes, acciones,
+   lugar, atmósfera, colores. Sé específico con vestimenta y composición.
+   TODOS los prompts deben tener el MISMO estilo artístico para consistencia.
 
 2. Términos de búsqueda para Wikimedia Commons (EN INGLÉS) por si existe
-   una ilustración, mapa o grabado de dominio público. Esto es útil para
-   mapas de mundos ficticios, portadas de libros en dominio público, o
-   arte fan con licencia libre. Si la escena es muy específica del lore
-   y no es probable encontrar imagen real, deja la lista vacía.
+   una ilustración o mapa de dominio público. Si no es probable encontrar
+   imagen real, deja la lista vacía.
 
 Responde EXCLUSIVAMENTE con un JSON válido:
-{
+{{
   "scenes": [
-    {
+    {{
       "index": 0,
-      "image_prompt_en": "epic fantasy illustration of...",
+      "image_prompt_en": "{style_prefix}, [descripción de la escena]",
       "wikimedia_search_terms": ["term1", "term2"]
-    }
+    }}
   ]
-}
+}}
 
 Genera una entrada por cada escena del guion, manteniendo el mismo índice.
 """
@@ -69,8 +69,12 @@ def create_storyboard_node(config: Config):
             for s in scenes
         )
 
+        system_prompt = SYSTEM_PROMPT_TEMPLATE.format(
+            style_prefix=config.image_style_prefix,
+        )
+
         messages = [
-            SystemMessage(content=SYSTEM_PROMPT),
+            SystemMessage(content=system_prompt),
             HumanMessage(
                 content=(
                     f"Tema: **{topic}**\n\n"

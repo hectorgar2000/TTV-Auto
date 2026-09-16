@@ -16,6 +16,7 @@ class SubtitleEntry(TypedDict, total=False):
 class Scene(TypedDict, total=False):
     index: int
     narration_text: str
+    impact_text: str
     image_prompt_en: str
     wikimedia_search_terms: list[str]
     wikimedia_image_url: str

@@ -25,6 +25,12 @@ class Config:
     piper_model_path: str = ""
     tts_speaker_wav: str = ""
 
+    # Estilo visual (prefijo que se añade a todos los prompts de imagen)
+    image_style_prefix: str = (
+        "dark digital comic art, manga style, detailed illustration, "
+        "dramatic lighting, muted colors, cinematic composition, 16:9 aspect ratio"
+    )
+
     # Stable Diffusion
     sd_model: str = "stabilityai/sdxl-turbo"
     sd_steps: int = 4

@@ -57,6 +57,10 @@ def assemble_video(
         )
         img_clip = img_clip.with_audio(audio_clip)
 
+        impact_text = scene.get("impact_text", "")
+        if impact_text:
+            img_clip = _burn_impact_text(img_clip, impact_text, actual_duration, config)
+
         subtitle_entries = scene.get("subtitle_entries", [])
         if subtitle_entries:
             img_clip = _burn_subtitles(img_clip, subtitle_entries, config)
@@ -92,34 +96,70 @@ def assemble_video(
     return output_path
 
 
+_KB_EFFECTS = ["zoom_in", "zoom_out", "pan_left", "pan_right", "pan_up", "pan_down"]
+_kb_index = 0
+
+
+def _next_kb_effect() -> str:
+    """Cycle through Ken Burns effects for variety."""
+    global _kb_index
+    effect = _KB_EFFECTS[_kb_index % len(_KB_EFFECTS)]
+    _kb_index += 1
+    return effect
+
+
 def _create_ken_burns_clip(
     image_path: str,
     duration: float,
     target_size: tuple[int, int],
     zoom_factor: float = 1.15,
 ):
-    """Create an image clip with a slow zoom (Ken Burns) effect."""
-    from moviepy.video.VideoClip import ImageClip
+    """Create an image clip with varied Ken Burns effects (zoom, pan)."""
     from PIL import Image
     import numpy as np
 
+    effect = _next_kb_effect()
+    pad = zoom_factor
+
     img = Image.open(image_path).convert("RGB")
     img = img.resize(
-        (int(target_size[0] * zoom_factor), int(target_size[1] * zoom_factor)),
+        (int(target_size[0] * pad), int(target_size[1] * pad)),
         Image.LANCZOS,
     )
     img_array = np.array(img)
     tw, th = target_size
+    iw, ih = img_array.shape[1], img_array.shape[0]
 
     def make_frame(t):
-        progress = t / max(duration, 0.1)
-        scale = 1.0 + (zoom_factor - 1.0) * (1.0 - progress)
-        cw = int(tw * scale)
-        ch = int(th * scale)
-        cw = min(cw, img_array.shape[1])
-        ch = min(ch, img_array.shape[0])
-        x = (img_array.shape[1] - cw) // 2
-        y = (img_array.shape[0] - ch) // 2
+        p = t / max(duration, 0.1)
+
+        if effect == "zoom_in":
+            scale = 1.0 + (pad - 1.0) * (1.0 - p)
+            cx, cy = iw / 2, ih / 2
+        elif effect == "zoom_out":
+            scale = 1.0 + (pad - 1.0) * p
+            cx, cy = iw / 2, ih / 2
+        elif effect == "pan_left":
+            scale = pad * 0.95
+            cx = iw * (0.6 - 0.2 * p)
+            cy = ih / 2
+        elif effect == "pan_right":
+            scale = pad * 0.95
+            cx = iw * (0.4 + 0.2 * p)
+            cy = ih / 2
+        elif effect == "pan_up":
+            scale = pad * 0.95
+            cx = iw / 2
+            cy = ih * (0.6 - 0.2 * p)
+        else:  # pan_down
+            scale = pad * 0.95
+            cx = iw / 2
+            cy = ih * (0.4 + 0.2 * p)
+
+        cw = min(int(tw * scale), iw)
+        ch = min(int(th * scale), ih)
+        x = max(0, min(int(cx - cw / 2), iw - cw))
+        y = max(0, min(int(cy - ch / 2), ih - ch))
         crop = img_array[y : y + ch, x : x + cw]
         pil_crop = Image.fromarray(crop).resize(target_size, Image.LANCZOS)
         return np.array(pil_crop)
@@ -131,7 +171,7 @@ def _create_ken_burns_clip(
 
 
 def _burn_subtitles(clip, subtitle_entries: list[SubtitleEntry], config: Config):
-    """Burn subtitle entries into the video clip."""
+    """Burn subtitle entries into the video clip (large, with shadow)."""
     from moviepy.video.compositing.CompositeVideoClip import CompositeVideoClip
     from moviepy.video.VideoClip import TextClip
 
@@ -151,14 +191,14 @@ def _burn_subtitles(clip, subtitle_entries: list[SubtitleEntry], config: Config)
             txt_clip = (
                 TextClip(
                     text=text,
-                    font_size=42,
+                    font_size=54,
                     color="white",
                     stroke_color="black",
-                    stroke_width=2,
-                    font="Arial",
-                    size=(config.video_width - 200, None),
+                    stroke_width=3,
+                    font="Arial-Bold",
+                    size=(config.video_width - 160, None),
                 )
-                .with_position(("center", config.video_height - 140))
+                .with_position(("center", config.video_height - 160))
                 .with_start(max(0, local_start))
                 .with_duration(local_end - local_start)
             )
@@ -169,6 +209,38 @@ def _burn_subtitles(clip, subtitle_entries: list[SubtitleEntry], config: Config)
     if sub_clips:
         return CompositeVideoClip([clip] + sub_clips)
     return clip
+
+
+def _burn_impact_text(clip, impact_text: str, duration: float, config: Config):
+    """Overlay a large impact phrase centered on screen."""
+    if not impact_text or not impact_text.strip():
+        return clip
+
+    from moviepy.video.compositing.CompositeVideoClip import CompositeVideoClip
+    from moviepy.video.VideoClip import TextClip
+
+    show_start = max(0, duration * 0.3)
+    show_duration = min(2.5, duration * 0.4)
+
+    try:
+        txt = (
+            TextClip(
+                text=impact_text.upper(),
+                font_size=90,
+                color="#FFCC00",
+                stroke_color="black",
+                stroke_width=5,
+                font="Arial-Bold",
+                size=(config.video_width - 100, None),
+            )
+            .with_position("center")
+            .with_start(show_start)
+            .with_duration(show_duration)
+        )
+        return CompositeVideoClip([clip, txt])
+    except Exception as e:
+        logger.warning("Error creando impact text: %s", e)
+        return clip
 
 
 def _pick_music(music_dir: Path) -> Path | None:
