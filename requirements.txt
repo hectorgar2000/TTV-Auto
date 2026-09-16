@@ -1,0 +1,39 @@
+# === Core: LangChain + LangGraph ===
+langchain>=0.3.0
+langchain-core>=0.3.0
+langchain-anthropic>=0.3.0
+langchain-community>=0.3.0
+langgraph>=0.2.0
+langgraph-checkpoint-sqlite>=2.0.0
+
+# === Web search (gratuito) ===
+duckduckgo-search>=6.0.0
+
+# === TTS: tres opciones ===
+# Opcion 1 - Edge TTS (recomendada: gratis, rapida, sin GPU, calidad excelente)
+edge-tts>=7.0.0
+
+# Opcion 2 - Coqui XTTS v2 (requiere GPU, clonacion de voz)
+# pip install coqui-tts>=0.27.0
+
+# Opcion 3 - Piper TTS (ligera, offline, sin GPU)
+# pip install piper-tts
+# Descargar modelo: https://github.com/rhasspy/piper#voices
+
+# === Image generation: Stable Diffusion ===
+diffusers>=0.30.0
+# torch se instala aparte con soporte CUDA:
+#   pip install torch --index-url https://download.pytorch.org/whl/cu128
+transformers>=4.40.0
+accelerate>=0.30.0
+Pillow>=10.0.0
+
+# === Video assembly ===
+moviepy>=2.0.0
+
+# === Audio duration ===
+mutagen>=1.47.0
+
+# === Utilities ===
+pyyaml>=6.0
+requests>=2.31.0

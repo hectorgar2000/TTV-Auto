@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+venv/
+.venv/
+
+# Output generado
+output/
+!output/.gitkeep
+
+# Modelos y cache
+*.pt
+*.onnx
+*.safetensors
+.cache/
+
+# Base de datos de checkpoints
+checkpoints.db
+
+# Config local y secrets
+.env
+config.yaml
+
+# IDEs
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# ffmpeg shared DLLs (grandes, se descargan en setup)
+lib/ffmpeg/*.dll
